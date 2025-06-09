@@ -3,7 +3,11 @@ import * as cheerio from "cheerio";
 import { TOURNAMENTS } from "../config.js";
 import fs from "fs";
 
-async function scrapeTourmanent({ name, url, region, stage }) {
+async function scrapeTourmanent(
+  { name, url, region, stage },
+  allGames,
+  regionMatchCounters
+) {
   const browser = await puppeteer.launch({
     headless: true,
     defaultViewport: null,
@@ -20,13 +24,16 @@ async function scrapeTourmanent({ name, url, region, stage }) {
   const $ = cheerio.load(content);
 
   const matches = $(".brkts-match-has-details");
-  const allGames = [];
 
   matches.each((index, matchEl) => {
+    if (!regionMatchCounters[region]) regionMatchCounters[region] = 0;
+    regionMatchCounters[region] += 1;
+    const matchIndex = regionMatchCounters[region];
+
     const match = $(matchEl).find(".brkts-popup.brkts-match-info-popup");
 
     const meta = {
-      index: index,
+      matchIndex,
       tournament: name,
       stage: stage,
       region: region,
@@ -43,18 +50,6 @@ async function scrapeTourmanent({ name, url, region, stage }) {
     allGames.push(...games);
   });
 
-  if (allGames.length > 0) {
-    const csv = toCSV(allGames);
-    const dir = "./data";
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    const fileName = `${dir}/${name
-      .replace(/[^a-z0-9]/gi, "_")
-      .toLowerCase()}_${stage.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.csv`;
-    fs.writeFileSync(fileName, csv, "utf8");
-    console.log(`Saved CSV to ${fileName}`);
-  }
   await browser.close();
 }
 
@@ -66,7 +61,7 @@ function matchDetail(html, meta) {
   gameBlocks.each((i, block) => {
     const gameNum = i + 1;
     const game = {
-      match_id: `${meta.tournament}_M${meta.index+1}_G${gameNum}`,
+      match_id: `${meta.tournament}_M${meta.matchIndex}_G${gameNum}`,
       tournament: meta.tournament,
       stage: meta.stage,
       region: meta.region,
@@ -214,6 +209,22 @@ function toCSV(data) {
   return [headers.join(","), ...rows].join("\n");
 }
 
-for (const tournament of TOURNAMENTS) {
-  scrapeTourmanent(tournament).catch(console.error);
+async function main() {
+  const allGames = [];
+  const regionMatchCounters = {};
+  for (const tournament of TOURNAMENTS) {
+    await scrapeTourmanent(tournament, allGames, regionMatchCounters);
+  }
+  if (allGames.length > 0) {
+    const csv = toCSV(allGames);
+    const dir = "./data";
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    const fileName = `${dir}/all_matches.csv`;
+    fs.writeFileSync(fileName, csv, "utf8");
+    console.log(`Saved CSV to ${fileName}`);
+  }
 }
+
+main().catch(console.error);
