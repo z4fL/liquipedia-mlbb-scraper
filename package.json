@@ -1,0 +1,18 @@
+{
+  "name": "liquipedia-mlbb-scraper",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "start": "node scraper/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.12.1",
+  "dependencies": {
+    "cheerio": "^1.1.0",
+    "csv-writer": "^1.6.0",
+    "puppeteer": "^24.10.0"
+  },
+  "type": "module"
+}
