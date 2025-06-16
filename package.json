@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "start": "node scraper/index.js"
+    "scrape": "node scraper/index.js"
   },
   "keywords": [],
   "author": "",
@@ -12,6 +12,7 @@
   "dependencies": {
     "cheerio": "^1.1.0",
     "csv-writer": "^1.6.0",
+    "minimist": "^1.2.8",
     "puppeteer": "^24.10.0"
   },
   "type": "module"

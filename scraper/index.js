@@ -2,16 +2,14 @@ import puppeteer from "puppeteer";
 import * as cheerio from "cheerio";
 import { TOURNAMENTS } from "../config.js";
 import fs from "fs";
+import minimist from "minimist";
 
-async function scrapeTourmanent(
+async function scrapeTournament(
   { name, url, region, stage },
   allGames,
-  regionMatchCounters
+  regionMatchCounters,
+  browser // pass browser instance as argument
 ) {
-  const browser = await puppeteer.launch({
-    headless: true,
-    defaultViewport: null,
-  });
   const page = await browser.newPage();
 
   console.log("Start goto...");
@@ -26,7 +24,8 @@ async function scrapeTourmanent(
   const matches = $(".brkts-match-has-details");
 
   matches.each((index, matchEl) => {
-    if (!regionMatchCounters[region]) regionMatchCounters[region] = 0;
+    if (regionMatchCounters[region] === undefined)
+      regionMatchCounters[region] = 0;
     regionMatchCounters[region] += 1;
     const matchIndex = regionMatchCounters[region];
 
@@ -46,11 +45,14 @@ async function scrapeTourmanent(
         .attr("data-highlightingclass"),
     };
 
-    const games = matchDetail(match.html(), meta);
-    allGames.push(...games);
+    const matchHtml = match.html();
+    if (matchHtml) {
+      const games = matchDetail(matchHtml, meta);
+      allGames.push(...games);
+    }
   });
 
-  await browser.close();
+  await page.close();
 }
 
 function matchDetail(html, meta) {
@@ -105,9 +107,18 @@ function matchDetail(html, meta) {
       red: rightColor === "red" ? rightTeam : leftTeam,
     };
 
-    // assign team names
-    game.blue_team = leftColor === "blue" ? meta.left_team : meta.right_team;
-    game.red_team = rightColor === "red" ? meta.right_team : meta.left_team;
+    // assign team names with validation and fallback
+    if (
+      (leftColor === "blue" || leftColor === "red") &&
+      (rightColor === "blue" || rightColor === "red")
+    ) {
+      game.blue_team = leftColor === "blue" ? meta.left_team : meta.right_team;
+      game.red_team = rightColor === "red" ? meta.right_team : meta.left_team;
+    } else {
+      // fallback: assign as per DOM order if color detection fails
+      game.blue_team = meta.left_team || "";
+      game.red_team = meta.right_team || "";
+    }
 
     // role order: EXP, Jungle, Mid, Gold, Roam
     const roles = ["explaner", "jungler", "midlaner", "goldlaner", "roamer"];
@@ -212,19 +223,78 @@ function toCSV(data) {
 async function main() {
   const allGames = [];
   const regionMatchCounters = {};
-  for (const tournament of TOURNAMENTS) {
-    await scrapeTourmanent(tournament, allGames, regionMatchCounters);
+  const browser = await puppeteer.launch({
+    headless: true,
+    defaultViewport: null,
+  });
+  try {
+    for (const tournament of TOURNAMENTS) {
+      await scrapeTournament(
+        tournament,
+        allGames,
+        regionMatchCounters,
+        browser
+      );
+    }
+    if (allGames.length > 0) {
+      const csv = toCSV(allGames);
+      const dir = "./data";
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      const fileName = `${dir}/all_matches.csv`;
+      fs.writeFileSync(fileName, csv, "utf8");
+      console.log(`Saved CSV to ${fileName}`);
+    }
+  } finally {
+    await browser.close();
+    console.log("Browser Close");
   }
-  if (allGames.length > 0) {
-    const csv = toCSV(allGames);
+}
+
+async function mainByRegion() {
+  const regionGames = {};
+  const regionMatchCounters = {};
+  const browser = await puppeteer.launch({
+    headless: true,
+    defaultViewport: null,
+  });
+  try {
+    for (const tournament of TOURNAMENTS) {
+      if (!regionGames[tournament.region]) regionGames[tournament.region] = [];
+      await scrapeTournament(
+        tournament,
+        regionGames[tournament.region],
+        regionMatchCounters,
+        browser
+      );
+    }
     const dir = "./data";
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    const fileName = `${dir}/all_matches.csv`;
-    fs.writeFileSync(fileName, csv, "utf8");
-    console.log(`Saved CSV to ${fileName}`);
+    for (const region in regionGames) {
+      if (regionGames[region].length > 0) {
+        const csv = toCSV(regionGames[region]);
+        const fileName = `${dir}/matches_${region}.csv`;
+        fs.writeFileSync(fileName, csv, "utf8");
+        console.log(`Saved CSV to ${fileName}`);
+      }
+    }
+  } finally {
+    await browser.close();
+    console.log("Browser Close");
   }
 }
 
-main().catch(console.error);
+const args = minimist(process.argv.slice(2));
+const mode = args.region ? 'region' : 'all';
+
+console.log(`Scraping mode: ${mode}`);
+
+// lanjutkan sesuai mode
+if (mode === 'all') {
+  main().catch(console.error);
+} else if (mode === 'region') {
+  mainByRegion().catch(console.error);
+}

@@ -14,6 +14,9 @@ importers:
       csv-writer:
         specifier: ^1.6.0
         version: 1.6.0
+      minimist:
+        specifier: ^1.2.8
+        version: 1.2.8
       puppeteer:
         specifier: ^24.10.0
         version: 24.10.0
@@ -301,6 +304,9 @@ packages:
   lru-cache@7.18.3:
     resolution: {integrity: sha512-jumlc0BIUrS3qJGgIkWZsyfAM7NCWiBcCDhnd+3NNM5KbBmLTgHVfWBcg6W+rLUsIpzpERPsvwUP7CckAQSOoA==}
     engines: {node: '>=12'}
+
+  minimist@1.2.8:
+    resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
 
   mitt@3.0.1:
     resolution: {integrity: sha512-vKivATfr97l2/QBCYAkXYDbrIWPM2IIKEl7YPhjCvKlG3kE2gm+uBo6nEXK3M5/Ffh/FLpKExzOQ3JJoJGFKBw==}
@@ -780,6 +786,8 @@ snapshots:
   lines-and-columns@1.2.4: {}
 
   lru-cache@7.18.3: {}
+
+  minimist@1.2.8: {}
 
   mitt@3.0.1: {}
 
