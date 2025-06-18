@@ -253,19 +253,19 @@ async function main() {
 }
 
 async function mainByRegion() {
-  const regionGames = {};
-  const regionMatchCounters = {};
+  const nameGames = {};
+  const nameMatchCounters = {};
   const browser = await puppeteer.launch({
     headless: true,
     defaultViewport: null,
   });
   try {
     for (const tournament of TOURNAMENTS) {
-      if (!regionGames[tournament.region]) regionGames[tournament.region] = [];
+      if (!nameGames[tournament.name]) nameGames[tournament.name] = [];
       await scrapeTournament(
         tournament,
-        regionGames[tournament.region],
-        regionMatchCounters,
+        nameGames[tournament.name],
+        nameMatchCounters,
         browser
       );
     }
@@ -273,10 +273,10 @@ async function mainByRegion() {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    for (const region in regionGames) {
-      if (regionGames[region].length > 0) {
-        const csv = toCSV(regionGames[region]);
-        const fileName = `${dir}/matches_${region}.csv`;
+    for (const name in nameGames) {
+      if (nameGames[name].length > 0) {
+        const csv = toCSV(nameGames[name]);
+        const fileName = `${dir}/${name}.csv`;
         fs.writeFileSync(fileName, csv, "utf8");
         console.log(`Saved CSV to ${fileName}`);
       }
