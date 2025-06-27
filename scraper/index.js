@@ -84,6 +84,7 @@ function matchDetail(html, meta) {
       blue_bans: "",
       red_bans: "",
       winner: "",
+      winner_team: "",
       game_duration: "",
     };
 
@@ -147,6 +148,7 @@ function matchDetail(html, meta) {
     );
     game.winner = winner;
     game.game_duration = game_duration;
+    game.winner_team = winner == "blue" ? game.blue_team : game.red_team;
 
     games.push(game);
   });
@@ -155,20 +157,23 @@ function matchDetail(html, meta) {
 }
 
 function getWinnerAndDuration($, gameBlock, teamSideMap) {
-  const isLeftWin =
-    $(gameBlock)
-      .find(".fa-check")
-      .closest(".brkts-popup-body-element")
-      .index() < 3;
+  const elements = $(gameBlock).children();
 
+  // Cari index dari parent <div> yang punya icon fa-check (pemenang)
+  const winnerIconParent = $(gameBlock)
+    .find(".fa-check")
+    .closest(".brkts-popup-spaced");
+  const winnerIndex = elements.index(winnerIconParent);
+
+  // Kalo posisi icon menang ada di kiri (< 3), maka tim kiri menang
+  const isLeftWin = winnerIndex < 3;
   const winner = isLeftWin ? teamSideMap.left : teamSideMap.right;
-  const duration = $(gameBlock)
-    .find('[class*="brkts-popup-spaced"]')
-    .text()
-    .trim();
+
+  // Ambil durasi (posisi selalu di tengah, index ke-2)
+  const duration = $(elements[2]).text().trim();
 
   return {
-    winner: winner, // hasilnya: 'blue' atau 'red'
+    winner,
     game_duration: duration,
   };
 }
@@ -288,13 +293,13 @@ async function mainByRegion() {
 }
 
 const args = minimist(process.argv.slice(2));
-const mode = args.region ? 'region' : 'all';
+const mode = args.region ? "region" : "all";
 
 console.log(`Scraping mode: ${mode}`);
 
 // lanjutkan sesuai mode
-if (mode === 'all') {
+if (mode === "all") {
   main().catch(console.error);
-} else if (mode === 'region') {
+} else if (mode === "region") {
   mainByRegion().catch(console.error);
 }
