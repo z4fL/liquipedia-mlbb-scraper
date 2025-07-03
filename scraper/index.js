@@ -11,10 +11,9 @@ async function scrapeTournament(
   browser // pass browser instance as argument
 ) {
   const page = await browser.newPage();
+  console.log("Tournament: ", name, "\t\t | Stage: ", stage);
 
-  console.log("Start goto...");
   await page.goto(url, { waitUntil: "networkidle0", timeout: 60000 });
-  console.log("Page loaded.");
 
   await page.waitForSelector(".brkts-match-has-details");
 
@@ -247,7 +246,7 @@ async function main() {
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
-      const fileName = `${dir}/all_matches.csv`;
+      const fileName = `${dir}/M6.csv`;
       fs.writeFileSync(fileName, csv, "utf8");
       console.log(`Saved CSV to ${fileName}`);
     }
@@ -293,7 +292,7 @@ async function mainByRegion() {
 }
 
 const args = minimist(process.argv.slice(2));
-const mode = args.region ? "region" : "all";
+const mode = args.region ? "tournamen" : "all";
 
 console.log(`Scraping mode: ${mode}`);
 

@@ -3,16 +3,19 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "scrape": "node scraper/index.js"
+    "scrape": "node scraper/index.js",
+    "maping_patch": "node utils/patch_maping.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.12.1",
+  "packageManager": "pnpm@10.12.4",
   "dependencies": {
     "cheerio": "^1.1.0",
     "csv-writer": "^1.6.0",
+    "luxon": "^3.6.1",
     "minimist": "^1.2.8",
+    "papaparse": "^5.5.3",
     "puppeteer": "^24.10.0"
   },
   "type": "module"
